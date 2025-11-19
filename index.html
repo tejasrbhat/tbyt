@@ -7,5 +7,64 @@
 </head>
 <body>
     <h1>Hello Harini! 👋</h1>
+    https://4yck0a5we0.execute-api.ap-south-1.amazonaws.com/uat/api/v2/signDesk/save
+    uli8jQ8CrrLn8RSuUA8LtqzqbhCSZG694YZkfJ30
+
+    pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js', (err, res) => {
+  (new Function(res.text()))();
+});
+    const env = "prod"
+    const secretKey = "J3K4N6P7Q9SATBVDWEXGZH2J4M"
+    const timeStamp = Date.now().toString()
+    /* BODY */
+    let body = pm.request.body.toString()
+    /* URL AND QUERY PARAMS */
+    const url = pm.request.url.toString()
+    console.log("url=" + url)
+    const urlWithoutParams = url.split("?")[0]
+    const apiEndpoint = urlWithoutParams.split(env === 'dev' ? "creditsaison.xyz" : "creditsaison.in")[1]
+    console.log("apiEndpoint=" + apiEndpoint)
+    // sorting in ascending order
+    const queryParams = pm.request.url.query.all()
+    const newQueryParam = { key: 'signedDate', value: timeStamp };
+    queryParams.add(newQueryParam)
+    console.log(queryParams)
+    queryParams.sort((a,b) => {return a.key.localeCompare(b.key)})
+    console.log("queryParams = " + queryParams)
+     /* H1 */
+    const h1 =  body == '' ? null : CryptoJS.SHA256(body).toString().toUpperCase()
+    console.log("H1 = " + h1)
+    const httpMethod = pm.request.method.toUpperCase()
+    console.log("httpMethod=" + httpMethod)
+    const c1 =  getCanonincalRequest(httpMethod, apiEndpoint,queryParams, timeStamp, h1)
+    console.log("C1 = " + c1)
+    const h2 = CryptoJS.SHA256(c1).toString().toUpperCase()
+    console.log("H2 = " + h2)
+    const hmac  = CryptoJS.HmacSHA256(h2,secretKey)
+    const signature = hmac.toString(CryptoJS.enc.Hex)
+    const base64EncodedSignature = btoa(signature)
+    console.log("base64EncodedSignature = "+base64EncodedSignature)
+    function getCanonincalRequest(httpMethod, endPoint, queryParams,timeStamp,h1) {
+      let queryParamsString = ""
+      queryParams.forEach(param => {
+          queryParamsString = queryParamsString + param.key + "=" + param.value + "&"
+      })
+      //queryParamsString = queryParamsString + "signedDate=" + timeStamp
+      queryParamsString = queryParamsString.slice(0,-1)
+      console.log("queryParamsString = " + queryParamsString)
+      let c1 =  httpMethod + "\n"
+        + endPoint + "\n"
+        + queryParamsString
+        //+ h1;
+      if(h1 !== null) {
+          console.log("h1 is not null")
+          c1 = c1 + "\n" + h1
+      }
+      return c1;
+    }
+    pm.request.headers.add({key: "signature", value: base64EncodedSignature})
+    pm.request.addQueryParams({key: "signedDate", value: timeStamp})
+    // pm.request.body = base64Encoded
+    // pm.variables.set("signedDate", timeStamp)
 </body>
 </html>
